@@ -66,7 +66,7 @@ Use Cases
 Initial command to run 
 
 
-Step 1. clone it using ```git clone https://github.com/SurajjBhardwaj/Doogle.git```
+Step 1. clone it using ```git clone https://github.com/devradheee/Doogle.git```
 
 Step 2. npm install
 
