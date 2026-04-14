@@ -43,6 +43,7 @@ export default function Room({ userName, roomName }) {
   const pusherRef = useRef();
   const channelRef = useRef();
   const rtcConnection = useRef();
+  const handlersRef = useRef({});
   const userStream = useRef();
   const userVideo = useRef(null);
   const partnerVideo = useRef(null);
@@ -65,42 +66,42 @@ export default function Room({ userName, roomName }) {
       if (members.count > 2) {
         router.push("/");
       }
-      handleRoomJoined();
+      handlersRef.current.handleRoomJoined?.();
     });
 
     channelRef.current.bind("pusher:member_removed", () => {
-      handlePeerLeaving();
+      handlersRef.current.handlePeerLeaving?.();
     });
 
     channelRef.current.bind("client-offer", (offer) => {
       if (!host.current) {
-        handleReceivedOffer(offer);
+        handlersRef.current.handleReceivedOffer?.(offer);
       }
     });
 
     channelRef.current.bind("client-ready", () => {
-      initiateCall();
+      handlersRef.current.initiateCall?.();
     });
 
     channelRef.current.bind("client-answer", (answer) => {
       if (host.current) {
-        handleAnswerReceived(answer);
+        handlersRef.current.handleAnswerReceived?.(answer);
       }
     });
 
     channelRef.current.bind("client-ice-candidate", (iceCandidate) => {
-      handlerNewIceCandidateMsg(iceCandidate);
+      handlersRef.current.handlerNewIceCandidateMsg?.(iceCandidate);
     });
 
     channelRef.current.bind("client-message", (message) => {
-      receiveMessage(message);
+      handlersRef.current.receiveMessage?.(message);
     });
 
     return () => {
       if (pusherRef.current)
         pusherRef.current.unsubscribe(`presence-${roomName}`);
     };
-  }, [userName, roomName]);
+  }, [userName, roomName, router]);
 
   const handleRoomJoined = () => {
     navigator.mediaDevices
@@ -303,13 +304,23 @@ export default function Room({ userName, roomName }) {
       user: userName,
       text: message.trim(),
     };
-    setMessages([...messages, newMessage]);
+    setMessages((previousMessages) => [...previousMessages, newMessage]);
     channelRef.current.trigger("client-message", newMessage);
     setMessage("");
   };
 
-  const receiveMessage = (message) => {
-    setMessages([...messages, message]);
+  const receiveMessage = (incomingMessage) => {
+    setMessages((previousMessages) => [...previousMessages, incomingMessage]);
+  };
+
+  handlersRef.current = {
+    handleAnswerReceived,
+    handlePeerLeaving,
+    handleReceivedOffer,
+    handleRoomJoined,
+    handlerNewIceCandidateMsg,
+    initiateCall,
+    receiveMessage,
   };
 
   return (
